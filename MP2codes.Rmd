@@ -1,0 +1,135 @@
+---
+title: "Mini Project 1"
+output: pdf_document
+---
+
+```{r, include=F, warning=F, echo=F}
+library(tidyverse)
+library(rio)
+library(Stat2Data)
+library(lsmeans)
+library(asbio)
+library(car)
+```
+
+
+```{r}
+food <- import("review_cleaned2.csv") %>%
+  drop_na("response")
+```
+
+## conditions check
+
+```{r}
+ggplot(food, aes(y=response, x=interaction(review, price)))+geom_boxplot()
+```
+
+```{r}
+leveneTest(response ~ interaction(review,price), food)
+```
+
+No transformation needed. Doesn't violate equal variance rules.
+
+```{r}
+ggplot(food, aes(x=response, color=interaction(review,price)))+geom_density()
+
+```
+
+Some of the distributions not normal. Violation of normal distribution that might affect the accuracy of ANOVA analysis.
+
+## ANOVA
+Tukey check additive; it's additive as the slope is almost 0. so we don't need to include interaction of review and pricing in anova.
+
+```{r}
+TukeyNonaddPlot(response~price*review, data=food)
+```
+
+```{r}
+aov_food <- aov(response~price+review, data=food)
+summary(aov_food)
+```
+
+```{r}
+plot(aov_food, which = 1)
+plot(aov_food, which = 2)
+```
+
+## linear regression to check covariates
+
+```{r}
+lm <- lm(response~review+likely, data=food)
+summary(lm)
+```
+
+## Post-hoc analysis
+
+### Tukey HSD
+
+```{r}
+food$review <- as.factor(food$review)
+food$price <- as.factor(food$price)
+aov_food <- aov(response~price+review, data=food)
+pairwise <- TukeyHSD(aov_food)
+pairwise
+plot(pairwise)
+```
+
+### Bonferroni
+
+```{r}
+bonfCI(food$response, interaction(food$review, food$price), conf.level = 0.95)
+```
+
+### Fisher's LSD
+
+```{r}
+pairw.anova(food$response, interaction(food$review,food$price ), method = "lsd", conf.level = 0.95)
+```
+
+## Effect size
+
+```{r}
+summary(aov_food)
+```
+
+```{r}
+mse <- 2.72
+SD <- sqrt(mse)
+```
+
+```{r}
+twobad_mean <- mean(food$response[food$review=="2b"])
+onegoneb_mean <- mean(food$response[food$review=="bg"])
+twogood_mean <- mean(food$response[food$review=="2g"])
+```
+
+```{r}
+effect_size1 <- abs(twobad_mean - twogood_mean)/SD
+effect_size1
+```
+
+```{r}
+effect_size2 <- abs(twobad_mean - onegoneb_mean)/SD
+effect_size2
+```
+
+## Non-parametric test
+
+```{r}
+kruskal.test(response~interaction(review,price), data=food)
+
+```
+
+```{r}
+kruskal.test(response~review, data=food)
+
+```
+
+```{r}
+kruskal.test(response~price, data=food)
+
+```
+
+
+
+
