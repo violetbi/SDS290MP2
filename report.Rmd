@@ -1,0 +1,13 @@
+---
+title: "Mini Project 2 Report"
+output: pdf_document
+---
+
+```{r, include=F, warning=F, echo=F}
+library(tidyverse)
+library(rio)
+library(Stat2Data)
+library(lsmeans)
+library(asbio)
+library(car)
+```
